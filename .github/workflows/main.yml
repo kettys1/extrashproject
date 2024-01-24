@@ -1,27 +1,37 @@
-name: Publish
+name: Build and Deploy
 
-on: 
-  workflow_dispatch:
+on:
   push:
-  - main 
+    branches:
+      - main
 
 jobs:
-  publish:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
-    - name: Setup .Net
-      uses: action/setup-dotnet@v3
-      with:
-        dotnet-version: '6.0.x'
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
 
-      - name: Restore
-      run: dotnet restore ./CurrentTimeService.sln
+      - name: Install Dependencies
+        run: npm install
 
-      - name: Build
-      run: dotnet build ./CurrentTimeService.sln
+      - name: Build Application
+        run: npm run build
 
-      - name: Publish
-      run: dotnet publish ./CurrentTimeService.sln -- configuration Release --no-build
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    
+    steps:
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: <nama-app-service>
+          slot-name: <nama-slot-opsional>
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
